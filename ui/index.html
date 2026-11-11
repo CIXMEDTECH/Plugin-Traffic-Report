@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root { --fg: #15171c; --muted: #5f6573; --faint: #9aa0ac; --line: #e2e0da; --field: #ffffff; --accent: #c7841a; --accent-fg: #fff; --bad: #dc3d43; color-scheme: light; }
+      :root.dark { --fg: #e8eaef; --muted: #9aa1ae; --faint: #636a77; --line: #2a2f39; --field: #1a1d24; --accent-fg: #17130a; --bad: #f0575d; color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body { margin: 0; padding: 4px; font: 14px/1.5 system-ui, -apple-system, "PingFang SC", sans-serif; color: var(--fg); background: transparent; }
+      p { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+      .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      select, button { height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); color: inherit; font: inherit; }
+      select { min-width: 180px; }
+      button { cursor: pointer; font-weight: 500; transition: transform 0.1s ease-out; }
+      button:active { transform: scale(0.97); }
+      button:disabled { opacity: 0.55; cursor: default; }
+      button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+      #out { display: none; margin-top: 16px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+      #title { padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+      #body { margin: 0; padding: 12px 14px; font: 12px/1.7 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; word-break: break-word; }
+      #note { margin: 10px 0 0; font-size: 12px; }
+      #note.bad { color: var(--bad); }
+    </style>
+  </head>
+  <body>
+    <p id="about"></p>
+    <div class="row">
+      <select id="report" aria-label="report"></select>
+      <select id="kind" aria-label="period"></select>
+      <button id="preview"></button>
+      <button id="send" class="primary"></button>
+    </div>
+    <p id="note"></p>
+    <div id="out"><div id="title"></div><pre id="body"></pre></div>
+    <script src="_sdk.js"></script>
+    <script>
+      const TEXT = {
+        zh: {
+          about: "预览或立即发送某份报告最近一个完整周期的内容。报告本身在这个插件的设置里添加和修改。",
+          none: "还没有报告。请先在插件设置里添加一份。",
+          preview: "预览", send: "立即发送", sent: "已发送到通知渠道。", unnamed: "未命名报告",
+          kinds: { daily: "日报（昨天）", weekly: "周报（此前 7 天）", monthly: "月报（上个月）" },
+        },
+        en: {
+          about: "Preview a report's latest complete period, or send it now. Reports are added and changed in this plugin's settings.",
+          none: "No reports yet. Add one in the plugin's settings.",
+          preview: "Preview", send: "Send now", sent: "Sent to the notification channels.", unnamed: "Unnamed report",
+          kinds: { daily: "Daily (yesterday)", weekly: "Weekly (the 7 days before)", monthly: "Monthly (last month)" },
+        },
+      };
+      const $ = (id) => document.getElementById(id);
+      let t = TEXT.en;
+      let reports = [];
+      const note = (text, bad) => {
+        $("note").textContent = text || "";
+        $("note").className = bad ? "bad" : "";
+      };
+      function kinds() {
+        const r = reports.find((x) => x.id === $("report").value);
+        const all = ["daily", "weekly", "monthly"];
+        // The ones the report sends on its own come first; any can be asked for.
+        const order = r ? [...r.kinds, ...all.filter((k) => !r.kinds.includes(k))] : all;
+        $("kind").replaceChildren(...order.map((k) => new Option(t.kinds[k], k)));
+      }
+      async function load() {
+        reports = (await vespera.fetch("/reports")).json();
+        $("report").replaceChildren(...reports.map((r) => new Option(r.name || t.unnamed, r.id)));
+        const empty = reports.length === 0;
+        for (const id of ["report", "kind", "preview", "send"]) $(id).disabled = empty;
+        note(empty ? t.none : "");
+        kinds();
+      }
+      async function run(preview) {
+        for (const id of ["preview", "send"]) $(id).disabled = true;
+        note("");
+        try {
+          const res = await vespera.fetch("/send", { json: { report: $("report").value, kind: $("kind").value, preview } });
+          const m = res.json();
+          if (!res.ok) throw new Error(m.error || res.status);
+          $("out").style.display = "block";
+          $("title").textContent = m.title;
+          $("body").textContent = m.body;
+          if (m.sent) note(t.sent);
+        } catch (e) {
+          note(e.message, true);
+        } finally {
+          for (const id of ["preview", "send"]) $(id).disabled = false;
+        }
+      }
+      $("report").onchange = kinds;
+      $("preview").onclick = () => run(true);
+      $("send").onclick = () => run(false);
+      vespera.onContext((c) => {
+        t = TEXT[c.lang] || TEXT.en;
+        document.documentElement.style.setProperty("--accent", c.accent);
+        $("about").textContent = t.about;
+        $("preview").textContent = t.preview;
+        $("send").textContent = t.send;
+        load().catch((e) => note(e.message, true));
+      });
+    </script>
+  </body>
+</html>

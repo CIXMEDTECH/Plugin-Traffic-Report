@@ -1,0 +1,68 @@
+{
+  "id": "traffic-report",
+  "name": { "zh": "流量报告", "en": "Traffic reports" },
+  "description": {
+    "zh": "按日、周、月把各节点的流量汇总发到通知渠道。",
+    "en": "Daily, weekly and monthly traffic summaries of your nodes, sent to your notification channels."
+  },
+  "author": "Vespera",
+  "version": "1.0.0",
+  "url": "https://github.com/CIXMEDTECH/Vespera/tree/main/examples/plugin-traffic-report",
+  "icon": "bar-chart",
+  "vespera": ">=0.1.0-beta.8",
+  "entry": "main.js",
+  "permissions": ["nodes", "notify", "routes"],
+  "configuration": [
+    {
+      "key": "reports",
+      "type": "list",
+      "name": { "zh": "报告", "en": "Reports" },
+      "help": {
+        "zh": "每份报告有自己的周期、节点和渠道。到了设定的整点之后发送；如果面板当时没在运行，启动后会补发。",
+        "en": "Each report has its own schedule, nodes and channels. It goes out once the hour has come; if the panel was down then, it is sent after it starts."
+      },
+      "fields": [
+        { "key": "name", "type": "string", "name": { "zh": "名称", "en": "Name" }, "default": "" },
+        { "key": "enabled", "type": "switch", "name": { "zh": "启用", "en": "Enabled" }, "default": true },
+        { "key": "daily", "type": "switch", "name": { "zh": "日报（每天，统计前一天）", "en": "Daily (every day, for the day before)" }, "default": true },
+        { "key": "weekly", "type": "switch", "name": { "zh": "周报（统计此前 7 天）", "en": "Weekly (for the 7 days before)" }, "default": false },
+        { "key": "monthly", "type": "switch", "name": { "zh": "月报（每月 1 日，统计上个月）", "en": "Monthly (on the 1st, for the month before)" }, "default": true },
+        {
+          "key": "hour",
+          "type": "number",
+          "name": { "zh": "发送时间（整点，0–23）", "en": "Hour to send at (0–23)" },
+          "help": { "zh": "按服务器所在时区。", "en": "In the server's time zone." },
+          "default": 9
+        },
+        {
+          "key": "weekday",
+          "type": "select",
+          "name": { "zh": "周报发送日", "en": "Day of the weekly report" },
+          "default": "1",
+          "options": [
+            { "value": "1", "label": "周一 / Monday" },
+            { "value": "2", "label": "周二 / Tuesday" },
+            { "value": "3", "label": "周三 / Wednesday" },
+            { "value": "4", "label": "周四 / Thursday" },
+            { "value": "5", "label": "周五 / Friday" },
+            { "value": "6", "label": "周六 / Saturday" },
+            { "value": "7", "label": "周日 / Sunday" }
+          ]
+        },
+        { "key": "channels", "type": "channels", "name": { "zh": "发送到", "en": "Send to" } },
+        { "key": "nodes", "type": "nodes", "name": { "zh": "统计的节点", "en": "Nodes to report on" } },
+        {
+          "key": "template",
+          "type": "textarea",
+          "name": { "zh": "自定义正文", "en": "Custom body" },
+          "help": {
+            "zh": "留空使用默认正文。可用变量：{period_name} {period} {lines} {nodes} {total_tx} {total_rx} {total} {site} {time}",
+            "en": "Empty for the default. Variables: {period_name} {period} {lines} {nodes} {total_tx} {total_rx} {total} {site} {time}"
+          },
+          "default": ""
+        }
+      ]
+    }
+  ],
+  "pages": [{ "file": "ui/index.html", "title": { "zh": "流量报告", "en": "Traffic reports" }, "icon": "bar-chart" }]
+}
