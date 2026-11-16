@@ -6,8 +6,8 @@
     "en": "Daily, weekly and monthly traffic summaries of your nodes, sent to your notification channels."
   },
   "author": "Vespera",
-  "version": "1.0.0",
-  "url": "https://github.com/CIXMEDTECH/Vespera/tree/main/examples/plugin-traffic-report",
+  "version": "1.0.1",
+  "url": "https://github.com/CIXMEDTECH/Plugin-Traffic-Report",
   "icon": "bar-chart",
   "vespera": ">=0.1.0-beta.8",
   "entry": "main.js",
